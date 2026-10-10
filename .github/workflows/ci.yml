@@ -1,7 +1,7 @@
-# Compila NESRecomp en Linux, macOS y Windows, corre la batería de pruebas con
-# las ROMs de prueba libres (nes-test-roms) y comprueba el contrato de línea de
-# comandos común con GBRecomp. run_tests.sh ya recompila tres ROMs de prueba y
-# compara cada proyecto generado contra el intérprete con difftest.
+# Compila NESRecomp en Linux, macOS y Windows, comprueba el contrato de línea de
+# comandos común con GBRecomp, corre las pruebas con las ROMs de prueba libres
+# y arma el paquete. Es el mismo flujo que el de GBRecomp: lo que cambia entre
+# los dos repos está en los Makefile (make testroms, make test, make dist).
 name: ci
 
 # Las ramas se prueban por su PR; los push solo en main (después del merge).
@@ -18,10 +18,6 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
-# Commit fijo de christopherpow/nes-test-roms (el repositorio no tiene releases)
-env:
-  NES_TEST_ROMS: 95d8f621ae55cee0d09b91519a8989ae0e64753b
-
 jobs:
   build:
     strategy:
@@ -32,6 +28,10 @@ jobs:
     defaults:
       run:
         shell: ${{ matrix.os == 'windows-latest' && 'msys2 {0}' || 'bash' }}
+    # Sin pantalla: SDL con los controladores "dummy" (pruebas de la interfaz con --ui-shot)
+    env:
+      SDL_VIDEODRIVER: dummy
+      SDL_AUDIODRIVER: dummy
     steps:
       - uses: actions/checkout@v4
 
@@ -43,6 +43,7 @@ jobs:
         if: runner.os == 'macOS'
         run: brew install sdl2 pkg-config
 
+      # git: para que la versión (git describe) salga también en Windows
       - name: Dependencias (Windows, MSYS2 UCRT64)
         if: runner.os == 'Windows'
         uses: msys2/setup-msys2@v2
@@ -51,6 +52,8 @@ jobs:
           update: true
           install: >-
             make
+            git
+            unzip
             mingw-w64-ucrt-x86_64-gcc
             mingw-w64-ucrt-x86_64-SDL2
             mingw-w64-ucrt-x86_64-pkgconf
@@ -58,21 +61,20 @@ jobs:
       - name: Compilar
         run: make -j4
 
-      - name: Contrato de línea de comandos común con GBRecomp
+      - name: Contrato de línea de comandos común
         run: sh tests/contract.sh
 
-      - name: ROMs de prueba (christopherpow/nes-test-roms)
-        run: |
-          curl -fsSL -o roms.tar.gz https://github.com/christopherpow/nes-test-roms/archive/$NES_TEST_ROMS.tar.gz
-          mkdir -p testroms/nes-test-roms
-          tar -xzf roms.tar.gz -C testroms/nes-test-roms --strip-components=1
-          ls testroms/nes-test-roms
+      - name: ROMs de prueba
+        run: make testroms
 
-      # Incluye la recompilación de nestest, instr_test 01-basics y ppu_vbl_nmi
-      # 01-vbl_basics con difftest, y la interfaz dibujada sin ventana (--ui-shot):
-      # SDL con los controladores "dummy" porque los runners no tienen pantalla.
+      # Incluye recompilar una ROM de prueba y compararla contra el intérprete con difftest
       - name: Pruebas
-        env:
-          SDL_VIDEODRIVER: dummy
-          SDL_AUDIODRIVER: dummy
         run: make test
+
+      - name: Paquete
+        run: make dist
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ github.event.repository.name }}-${{ runner.os }}
+          path: dist/*.tar.gz
