@@ -221,7 +221,7 @@ Sigue valiendo la sintaxis de antes (el número de cuadros suelto y `boton:desde
 **Contrato común con GBRecomp.** `nestrace`, `nesshot`, `nesaudio`, `nesbench` y `difftest` tienen las mismas opciones que
 las herramientas de [GBRecomp](https://github.com/Xalcker/GBRecomp) (`--frames`, `--input`, `--seed`, `--repeat`), y la GUI común
 ([retrorecomp](https://github.com/Xalcker/retrorecomp)) se apoya en eso. `sh tests/contract.sh` comprueba que las herramientas
-compiladas las mencionan (en GBRecomp lo corre el CI). Si cambias una opción aquí, cámbiala también en GBRecomp y en la tabla de retrorecomp.
+compiladas las mencionan; el CI la corre en cada PR (`.github/workflows/ci.yml`, como en GBRecomp). Si cambias una opción aquí, cámbiala también en GBRecomp y en la tabla de retrorecomp.
 
 `tests/golden.sh` compara el hash de imagen y audio de varios casos con una línea base; `tests/coverage.sh` mide la cobertura del análisis estático.
 

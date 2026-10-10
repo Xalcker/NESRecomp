@@ -1,0 +1,78 @@
+# Compila NESRecomp en Linux, macOS y Windows, corre la batería de pruebas con
+# las ROMs de prueba libres (nes-test-roms) y comprueba el contrato de línea de
+# comandos común con GBRecomp. run_tests.sh ya recompila tres ROMs de prueba y
+# compara cada proyecto generado contra el intérprete con difftest.
+name: ci
+
+# Las ramas se prueban por su PR; los push solo en main (después del merge).
+# Así un push a una rama con PR abierto no corre todo dos veces. Para probar
+# una rama sin PR: Actions > ci > Run workflow.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+# Un push nuevo al mismo PR (o a main) cancela la corrida anterior
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+# Commit fijo de christopherpow/nes-test-roms (el repositorio no tiene releases)
+env:
+  NES_TEST_ROMS: 95d8f621ae55cee0d09b91519a8989ae0e64753b
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: ${{ matrix.os == 'windows-latest' && 'msys2 {0}' || 'bash' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Dependencias (Linux)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y build-essential pkg-config libsdl2-dev
+
+      - name: Dependencias (macOS)
+        if: runner.os == 'macOS'
+        run: brew install sdl2 pkg-config
+
+      - name: Dependencias (Windows, MSYS2 UCRT64)
+        if: runner.os == 'Windows'
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: UCRT64
+          update: true
+          install: >-
+            make
+            mingw-w64-ucrt-x86_64-gcc
+            mingw-w64-ucrt-x86_64-SDL2
+            mingw-w64-ucrt-x86_64-pkgconf
+
+      - name: Compilar
+        run: make -j4
+
+      - name: Contrato de línea de comandos común con GBRecomp
+        run: sh tests/contract.sh
+
+      - name: ROMs de prueba (christopherpow/nes-test-roms)
+        run: |
+          curl -fsSL -o roms.tar.gz https://github.com/christopherpow/nes-test-roms/archive/$NES_TEST_ROMS.tar.gz
+          mkdir -p testroms/nes-test-roms
+          tar -xzf roms.tar.gz -C testroms/nes-test-roms --strip-components=1
+          ls testroms/nes-test-roms
+
+      # Incluye la recompilación de nestest, instr_test 01-basics y ppu_vbl_nmi
+      # 01-vbl_basics con difftest, y la interfaz dibujada sin ventana (--ui-shot):
+      # SDL con los controladores "dummy" porque los runners no tienen pantalla.
+      - name: Pruebas
+        env:
+          SDL_VIDEODRIVER: dummy
+          SDL_AUDIODRIVER: dummy
+        run: make test
