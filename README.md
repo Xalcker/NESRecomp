@@ -54,6 +54,11 @@ eso en Linux, macOS y Windows. AccuracyCoin es opcional (`tests/accuracycoin.py`
 git clone --depth 1 https://github.com/100thCoin/AccuracyCoin testroms/accuracycoin
 ```
 
+Para comparar contra una referencia, `tests/accuracycoin.py --compara` corre también AccuracyCoin en Mesen2 y lista
+las pruebas en que no coincidimos (`--mesen` da solo el marcador de Mesen2). El oráculo (`tools/oracles/mesen.py`)
+descarga Mesen2 2.1.1 la primera vez a `build/oracles/`, comprueba su SHA-256 y lo corre sin ventana; Mesen2 es GPL-3
+y no va en el repo.
+
 **Versiones.** La versión es la etiqueta de git más cercana (`git describe`: `v0.1.0`, o `v0.1.0-3-gabc1234` con
 commits después de ella). Al subir una etiqueta `vX.Y.Z` de `main` (`git tag v0.2.0 && git push origin v0.2.0`), el CI
 publica un release en GitHub con los paquetes de Linux, macOS y Windows. Igual que en el otro recompilador.
@@ -240,7 +245,7 @@ compiladas las mencionan; el CI la corre en cada PR (`.github/workflows/ci.yml`,
 | `src/nesrecomp/` | El recompilador. |
 | `src/platform/` | La interfaz SDL2 (`main_sdl.c`, `ui_menu`, `ui_font`, `i18n`, `settings`, `files`, `export`, `png`, `inputs.h`), `difftest.c` y `bench.c`. Se copian a cada proyecto generado. |
 | `src/tools/` | Herramientas sin ventana y `embed`. |
-| `tools/` | `retrorecomp/`: la GUI común con GBRecomp (submódulo). `compat/`: prueba de compatibilidad con una colección de ROMs (Python, con `uv`). `truth/`: scripts de GBRecomp para comparar contra un desensamblado (por adaptar a 6502). |
+| `tools/` | `retrorecomp/`: la GUI común con GBRecomp (submódulo). `compat/`: prueba de compatibilidad con una colección de ROMs (Python, con `uv`). `oracles/`: emuladores de referencia que se descargan al usarlos (Mesen2). `truth/`: scripts de GBRecomp para comparar contra un desensamblado (por adaptar a 6502). |
 | `docs/` | `ARQUITECTURA.md`, `COMPATIBILIDAD.md` y `compat/` (informe HTML, `results.json` y miniaturas). |
 | `tests/` | `run_tests.sh` (`make test`), `recomp_game.sh`, `golden.sh`, `coverage.sh`, `contract.sh`, `accuracycoin.py`. |
 | `testroms/` | ROMs de prueba: `nes-test-roms/` (nestest, Blargg, mmc3...; `make testroms`) y `accuracycoin/` (AccuracyCoin, MIT). No se versionan. |
