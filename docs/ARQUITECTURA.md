@@ -127,6 +127,9 @@ solo el flujo constante. `--no-tables` y `--no-spec` apagan las heurísticas par
 
 `--why`, `--viz`, `--html` (visor interactivo de una sola página) y `--events` explican el resultado: cada instrucción guarda de
 qué instrucción se llegó (`parent`), cómo (`how`) y su origen (flujo, traza, tabla, especulativo).
+`--codemap` escribe qué bytes del PRG se tomaron como código, una letra por byte (`C`), 64 por línea:
+el mismo formato que `difftest --executed` y que `gbrecomp --codemap`, para comparar lo descubierto
+con lo que el juego ejecutó.
 
 `--trace` agrega las instrucciones que ejecutó el juego (`OFFSET:DIRECCION`, que escribe `nestrace`, la
 ventana con `--trace`/`--uncovered`, o `nes` con `NES_TRACE`) como puntos de entrada: es lo que falta
@@ -170,7 +173,7 @@ L_8000: /* lda #$10 */
 `make` produce `nombre` (el juego), `difftest` y `bench`.
 
 - `./nombre [rom.nes]`: sin argumentos busca en la carpeta un `.nes` con el SHA1 esperado.
-- `./difftest rom.nes [cuadros] [boton:desde-hasta ...] [--seed S] [--uncovered f]`: corre el
+- `./difftest rom.nes [--frames N] [--input f] [--seed S] [--uncovered f] [--screens d] [--executed f] [--bench]`: corre el
   código recompilado y el intérprete lado a lado (`--seed` suma un mando aleatorio; `--uncovered`
   guarda las instrucciones de PRG que tuvo que interpretar, como traza para `nesrecomp --trace`); tras cada función, el intérprete avanza hasta el mismo ciclo y se
   comparan CPU, RAM, PPU, APU, mapper y, al final de cada cuadro, imagen y audio.
@@ -289,7 +292,10 @@ reproducen los botones (`inputs.h`, el mismo formato que `--input` de las herram
 `difftest` (en cada proyecto generado; ver "Proyecto generado") corre el código recompilado y el
 intérprete lado a lado y compara todo el estado de la consola, la imagen y el audio. `--seed S` suma
 un mando aleatorio reproducible y `--uncovered` guarda las instrucciones de PRG que tuvo que
-interpretar, como traza para `nesrecomp --trace`.
+interpretar, como traza para `nesrecomp --trace`. Como en GBRecomp, `--screens carpeta --every N`
+guarda capturas PNG, `--executed archivo` escribe el mapa de bytes de PRG ejecutados (lo registra la
+traza de la máquina que solo usa el intérprete; cada instrucción marca su opcode y sus operandos) y
+`--bench` mide la velocidad del recompilado y del intérprete por separado.
 
 `tests/recomp_game.sh rom nombre` hace el ciclo completo: traza guionada, recompila, compila, corre
 `difftest` con varias semillas, junta lo que cayó al intérprete, recompila con esa traza y vuelve a
@@ -328,3 +334,8 @@ abierto de la PPU y del APU. `tests/accuracycoin.py --compara` lista las diferen
 imagen final y de todo el audio con `tests/golden.txt`: una optimización no debe cambiar ni un byte
 (`--update` reescribe la línea base). Es lo que respalda la ejecución perezosa de la PPU y el APU
 (ver "Rendimiento: ejecución perezosa").
+
+`nesshot --hash` imprime un hash de todos los cuadros y de todo el audio, como `gbtest --hash`, que
+es lo que usa el `golden.sh` de GBRecomp. El de NES todavía compara el md5 de la captura final y del
+WAV (`nesshot` y `nesaudio`); pasarlo a `--hash` cambia `tests/golden.txt`, así que hay que
+regenerarlo con todos los juegos de `roms/` a la mano.

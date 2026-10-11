@@ -35,6 +35,16 @@ for f in $T/ppu_vbl_nmi/rom_singles/*.nes $T/instr_misc/instr_misc.nes $T/instr_
     if ./nesshot "$f" build/shots/t.png 4000 >/dev/null; then echo "ok   $(basename "$f")"
     else echo "FALLA $(basename "$f")"; fail=1; fi
 done
+# nesshot --expect y --hash (como gbtest) y ramdump con las opciones comunes
+R=$T/ppu_vbl_nmi/rom_singles/01-vbl_basics.nes
+h1=$(./nesshot $R build/shots/h1.png --frames 120 --hash | sed -n 's/^hash //p')
+h2=$(./nesshot $R build/shots/h2.png 120 --hash | sed -n 's/^hash //p')
+if [ -n "$h1" ] && [ "$h1" = "$h2" ] \
+    && ./nesshot $R build/shots/e.png --frames 120 --expect build/shots/h1.png >/dev/null \
+    && ! ./nesshot $R build/shots/e.png --frames 2 --expect build/shots/h1.png >/dev/null \
+    && [ "$(./ramdump $R --frames 60 | wc -l)" -eq 2048 ] \
+    && [ "$(./ramdump $R 60)" = "$(./ramdump $R --frames 60)" ]; then echo "ok   nesshot --expect/--hash, ramdump"
+else echo "FALLA nesshot --expect/--hash, ramdump"; fail=1; fi
 # Recompilador: recompila con traza y compara contra el intérprete (mapper 0 y MMC1)
 if [ -x ./nesrecomp ]; then
     for f in $T/other/nestest.nes $T/instr_test-v5/rom_singles/01-basics.nes $T/ppu_vbl_nmi/rom_singles/01-vbl_basics.nes; do
@@ -43,11 +53,22 @@ if [ -x ./nesrecomp ]; then
         else cat build/rt.log; echo "FALLA recomp $(basename "$f")"; fail=1; fi
     done
 fi
-# Descubrimiento: --why, --viz y --events
+# difftest: --bench, --screens/--every y --executed (con el proyecto de nestest de arriba)
+D=build/out/rt_nestest
+if [ -x ./nesrecomp ]; then
+    rm -rf build/dt_shots; mkdir -p build/dt_shots
+    if "$D/difftest" $T/other/nestest.nes --frames 200 --bench | grep -q "intérprete" \
+        && "$D/difftest" $T/other/nestest.nes --frames 200 --screens build/dt_shots --every 100 --executed build/dt_exec.txt >/dev/null \
+        && [ -s build/dt_shots/cuadro_000100.png ] && [ -s build/dt_shots/cuadro_000200.png ] \
+        && grep -q C build/dt_exec.txt; then echo "ok   difftest --bench/--screens/--executed"
+    else echo "FALLA difftest --bench/--screens/--executed"; fail=1; fi
+fi
+# Descubrimiento: --why, --viz, --events, --html y --codemap
 if [ -x ./nesrecomp ]; then
     ./nesrecomp $T/other/nestest.nes --why 4 --viz --events build/ev.txt 2>&1 | grep -q "punto de entrada: vector" \
         && ./nesrecomp $T/other/nestest.nes --html build/ev.html >/dev/null && grep -q 'const D=' build/ev.html \
-        && [ -s build/ev.txt ] && echo "ok   why/viz/events/html" || { echo "FALLA why/viz/events"; fail=1; }
+        && ./nesrecomp $T/other/nestest.nes --codemap build/cm.txt >/dev/null && grep -q C build/cm.txt \
+        && [ -s build/ev.txt ] && echo "ok   why/viz/events/html/codemap" || { echo "FALLA why/viz/events/html/codemap"; fail=1; }
 fi
 # Interfaz: cada menú y cada diálogo se dibuja sin fallar (--ui-shot, sin ventana)
 if [ -x ./nes ]; then
