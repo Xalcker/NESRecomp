@@ -54,7 +54,8 @@ void apu_reset(NES *n)
     a->s5b = MAPPER(&n->cart) == 69;
     memset(&n->s5b, 0, sizeof n->s5b);
     { S5b *s = &n->s5b; for (int i = 0; i < 3; i++) s->tcnt[i] = 16; s->ncnt = 32; s->ecnt = 16; s->lfsr = 1; s->ehold = 1; }
-    for (int i = 1; i < 32; i++) s5b_lvl[i] = powf(10.0f, -1.5f * (31 - i) / 20.0f);
+    s5b_lvl[31] = 1.0f;                                /* -1.5 dB por paso: 10^(-1.5/20) (sin libm: no todas las herramientas la enlazan) */
+    for (int i = 30; i >= 1; i--) s5b_lvl[i] = s5b_lvl[i + 1] * 0.8413951416f;
     a->d.rate = dmc_tab[0]; a->d.timer = dmc_tab[0]; a->d.buf_empty = 1; a->d.silence = 1; a->d.bits = 8;
     a->cps = CPU_HZ / APU_RATE;
     a->rate_mul = 1.0;
