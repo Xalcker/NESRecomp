@@ -256,3 +256,10 @@ compiladas las mencionan; el CI la corre en cada PR (`.github/workflows/ci.yml`,
   Revisa la licencia de ese repositorio antes de distribuir el proyecto.
 - ROMs de prueba de `testroms/`: [christopherpow/nes-test-roms](https://github.com/christopherpow/nes-test-roms)
   (nestest, Blargg y otros; no se versionan).
+
+## Licencia
+
+NESRecomp se distribuye con licencia [MIT](LICENSE), la misma que GBRecomp y retrorecomp. La licencia cubre
+el código del recompilador y del runtime, no las ROMs ni el código que se genera a partir de ellas: ese
+código es una traducción del programa del juego, así que sirve para jugar tu propia copia, pero no
+distribuyas el proyecto ni el ejecutable de un juego comercial.
