@@ -8,6 +8,8 @@
 #   Deja el proyecto en build/out/NOMBRE y la traza acumulada en build/NOMBRE.trace.
 #   TRACE_FRAMES=N: cuadros de la traza guionada inicial (2400 si no se dice).
 #   NOTRACE=1: sin la traza guionada inicial (solo análisis estático y lo que descubra difftest).
+#   INPUT_TRACE=ARCHIVO, INPUT_DIFFTEST=ARCHIVO: otras entradas (una partida grabada con --record)
+#     en lugar de las guionadas de abajo; sirven cuando estas no pasan del título de un juego.
 #
 # Es el mismo archivo en NESRecomp, GBRecomp y GENRecomp (tests/contract.py de retrorecomp lo
 # comprueba): la consola sale de qué recompilador hay en la carpeta. Las entradas guionadas
@@ -21,8 +23,9 @@ for c in nes gb gen; do
 done
 [ -n "$CON" ] || { echo "no encuentro nesrecomp, gbrecomp ni genrecomp en esta carpeta" >&2; exit 2; }
 ROM=$1; NAME=$2; TF=${TRACE_FRAMES:-2400}
+IN_T=${INPUT_TRACE:-tests/inputs/ciclo_traza.txt}; IN_D=${INPUT_DIFFTEST:-tests/inputs/ciclo_difftest.txt}
 case $CON in gb) DF=${3:-6000} ;; *) DF=${3:-1500} ;; esac
-[ -f "$ROM" ] && [ -n "$NAME" ] || { echo "uso: sh tests/recomp_game.sh ROM NOMBRE [CUADROS] [SEMILLAS...]  (TRACE_FRAMES=N, NOTRACE=1)" >&2; exit 2; }
+[ -f "$ROM" ] && [ -n "$NAME" ] || { echo "uso: sh tests/recomp_game.sh ROM NOMBRE [CUADROS] [SEMILLAS...]  (TRACE_FRAMES=N, NOTRACE=1, INPUT_TRACE=F, INPUT_DIFFTEST=F)" >&2; exit 2; }
 shift 3 2>/dev/null || shift $#
 SEEDS=${*:-"1 2 3"}
 ROM=$(cd "$(dirname "$ROM")" && pwd)/$(basename "$ROM")
@@ -34,7 +37,7 @@ mkdir -p build/out
 touch "$TRACE"
 
 if [ -z "$NOTRACE" ]; then
-    "./${CON}trace$EXE" "$ROM" "build/$NAME.guiada" --frames "$TF" --input tests/inputs/ciclo_traza.txt >/dev/null || exit 2
+    "./${CON}trace$EXE" "$ROM" "build/$NAME.guiada" --frames "$TF" --input "$IN_T" >/dev/null || exit 2
     cat "build/$NAME.guiada" >> "$TRACE"
     sort -u "$TRACE" -o "$TRACE"
 fi
@@ -46,7 +49,7 @@ ronda() {
     # Entradas distintas a las de la traza guionada, más el mando aleatorio de cada semilla
     for s in $SEEDS; do
         printf '  semilla %-4s ' "$s"
-        if ! "$OUT/difftest$EXE" "$ROM" --frames "$DF" --input tests/inputs/ciclo_difftest.txt \
+        if ! "$OUT/difftest$EXE" "$ROM" --frames "$DF" --input "$IN_D" \
                 --seed "$s" --uncovered "$OUT/unc_$s.txt" > "$OUT/difftest.log" 2>&1; then
             echo "DIFERENCIA"
             cat "$OUT/difftest.log"
