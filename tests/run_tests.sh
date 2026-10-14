@@ -95,14 +95,15 @@ if [ -x ./nesrecomp ]; then
       hex A9 05  85 10  C6 10  D0 FC  4C 0B 03  60; head -c 16318 /dev/zero
       hex 00 C0 00 C0 00 C0; head -c 8192 /dev/zero; } > "$RR"
     d=build/out/ram; ok=0
+    x=; [ -x ./nesrecomp.exe ] && x=.exe      # en Windows el objetivo del Makefile generado es difftest.exe
     rm -rf "$d" build/ram.unc build/ram2.unc
-    if ./nesrecomp "$RR" -o "$d" --name ram >/dev/null 2>&1 && make -C "$d" -j4 -s difftest >/dev/null 2>&1 \
+    if ./nesrecomp "$RR" -o "$d" --name ram >/dev/null 2>&1 && make -C "$d" -j4 -s "difftest$x" >/dev/null 2>&1 \
             && "$d/difftest" "$RR" --frames 60 --seed 1 --uncovered build/ram.unc > build/ram1.out 2>&1 \
             && grep -q "RAM 100.0%" build/ram1.out && grep -q "^ram 0300 A9 ??$" build/ram.unc \
             && [ "$(grep -c '^ram' build/ram.unc)" -eq 6 ]; then
         sleep 1     # el make de macOS compara fechas con precisión de un segundo
         if ./nesrecomp "$RR" -o "$d" --name ram --trace build/ram.unc 2>&1 | grep -q "aprendido de la traza: 6 instrucciones (1 con operandos variables) en 1 bloques" \
-                && make -C "$d" -j4 -s difftest >/dev/null 2>&1 \
+                && make -C "$d" -j4 -s "difftest$x" >/dev/null 2>&1 \
                 && "$d/difftest" "$RR" --frames 60 --seed 1 --uncovered build/ram2.unc > build/ram2.out 2>&1 \
                 && grep -q "cuadros iguales.*100.0% de los ciclos" build/ram2.out && ! grep -q "^ram" build/ram2.unc; then ok=1; fi
     fi
