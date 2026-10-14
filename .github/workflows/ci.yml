@@ -120,6 +120,12 @@ jobs:
         if: steps.cambios.outputs.docs != 'true' && runner.os == 'Linux'
         run: make webtest
 
+      # El juego recompilado en Android: make apktest compila la APK de una ROM de prueba con el SDK, el NDK y el JDK 17
+      # que traen los runners de Linux (sin SDK, make apk usaría Docker con la imagen de platform/android/Dockerfile)
+      - name: Android (APK)
+        if: steps.cambios.outputs.docs != 'true' && runner.os == 'Linux'
+        run: make apktest
+
       - name: Paquete
         if: steps.cambios.outputs.docs != 'true'
         run: make dist
