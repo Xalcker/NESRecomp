@@ -125,8 +125,8 @@ endif
 nes$(EXE): $(NES_SRC:%=src/platform/%) $(wildcard src/platform/*.h) $(RT) $(WINRES)
 	$(CC) $(CFLAGS) $(SDL_CFLAGS) -Isrc/runtime -I$(SHARED) -Isrc/platform -o $@ $(NES_SRC:%=src/platform/%) $(RT) $(WINRES) $(SDL_LIBS) -lm
 
-$(BUILD)/rt_%.o: src/runtime/%.c src/runtime/nes.h | $(BUILD)
-	$(CC) $(CFLAGS) -c -o $@ $<
+$(BUILD)/rt_%.o: src/runtime/%.c src/runtime/nes.h $(SHARED)/trace_line.h | $(BUILD)
+	$(CC) $(CFLAGS) -I$(SHARED) -c -o $@ $<
 
 $(RT): $(RUNTIME_OBJ)
 	ar rcs $@ $^
