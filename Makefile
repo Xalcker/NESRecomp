@@ -126,7 +126,7 @@ $(WINRES): src/platform/icono.rc src/platform/icono.ico | $(BUILD)
 endif
 
 nes$(EXE): $(call plat,$(NES_SRC)) $(wildcard src/platform/*.h) $(RT) $(WINRES)
-	$(CC) $(CFLAGS) $(SDL_CFLAGS) -Isrc/runtime -I$(SHARED) -Isrc/platform -o $@ $(call plat,$(NES_SRC)) $(RT) $(WINRES) $(SDL_LIBS) -lm
+	$(CC) $(CFLAGS) -I$(SHARED) $(SDL_CFLAGS) -Isrc/runtime -Isrc/platform -o $@ $(call plat,$(NES_SRC)) $(RT) $(WINRES) $(SDL_LIBS) -lm
 
 $(BUILD)/rt_%.o: src/runtime/%.c src/runtime/nes.h $(SHARED)/trace_line.h | $(BUILD)
 	$(CC) $(CFLAGS) -I$(SHARED) -c -o $@ $<
